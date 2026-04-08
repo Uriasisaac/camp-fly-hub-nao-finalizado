@@ -16,11 +16,14 @@ interface AppStore {
   addChampionship: (data: Omit<Championship, 'id' | 'participants' | 'videos' | 'ranking' | 'status'>) => void
   updateChampionshipInfo: (id: string, fields: {
     name?: string; description?: string; cover?: string; coverInternal?: string
+    startDate?: string; endDate?: string
     rankingDate?: string; paymentDeadline?: string; paymentInfo?: string
     validContent?: Championship['validContent']; rules?: Championship['rules']
     mainObjectiveDescription?: string
     mainObjectiveType?: Championship['mainObjectiveType']
     mainObjectiveMetric?: Championship['mainObjectiveMetric']
+    mainObjectivePeriodStart?: string
+    mainObjectivePeriodEnd?: string
     mainPositions?: Championship['mainPositions']
     secondaryObjectives?: Championship['secondaryObjectives']
   }) => void

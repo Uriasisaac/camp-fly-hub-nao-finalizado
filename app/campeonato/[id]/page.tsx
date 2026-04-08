@@ -111,20 +111,22 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
 
         {/* Info */}
         <div className="bg-[#0D0D0D] p-5 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-black text-white sm:text-2xl">{championship.name}</h1>
-              <p className="mt-1 text-xs text-[#555]">
-                {formatDate(championship.startDate)} → {formatDate(championship.endDate)}
-              </p>
-              {championship.description && (
-                <p className="mt-2 text-sm leading-relaxed text-[#777]">{championship.description}</p>
-              )}
+          <div>
+            <div className="flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-black text-white sm:text-2xl">{championship.name}</h1>
+                <p className="mt-1 text-xs text-[#555]">
+                  {formatDate(championship.startDate)} → {formatDate(championship.endDate)}
+                </p>
+              </div>
+              <div className="flex-none text-right">
+                <p className="text-xs text-[#555]">Premiação total</p>
+                <p className="text-xl font-black text-[#AAFF00]">{formatBRL(grandTotal)}</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-[#555]">Premiação total</p>
-              <p className="text-xl font-black text-[#AAFF00]">{formatBRL(grandTotal)}</p>
-            </div>
+            {championship.description && (
+              <p className="mt-3 text-sm leading-relaxed text-[#777]">{championship.description}</p>
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">

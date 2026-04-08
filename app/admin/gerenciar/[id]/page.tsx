@@ -62,6 +62,8 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm' | 'password'>('idle')
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
+  const [editStartDate, setEditStartDate] = useState('')
+  const [editEndDate, setEditEndDate] = useState('')
   const [editRankingDate, setEditRankingDate] = useState('')
   const [editPaymentDeadline, setEditPaymentDeadline] = useState('')
   const [editPaymentInfo, setEditPaymentInfo] = useState('')
@@ -79,6 +81,9 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
   const [editMainObjMetric, setEditMainObjMetric] = useState<DirectMetric>('views_totais')
   const [editMainPositions, setEditMainPositions] = useState<Position[]>([])
   const [editSecondaryObjs, setEditSecondaryObjs] = useState<SecondaryObjective[]>([])
+  const [editMainObjPeriodStart, setEditMainObjPeriodStart] = useState('')
+  const [editMainObjPeriodEnd, setEditMainObjPeriodEnd] = useState('')
+  const [editSecObjPeriods, setEditSecObjPeriods] = useState<Record<string, { start: string; end: string }>>({})
   const [reviewedVideoIds, setReviewedVideoIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -108,6 +113,8 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
       setEditDescription(championship.description || '')
       setEditCoverPreview(championship.cover || '')
       setEditCoverInternalPreview(championship.coverInternal || '')
+      setEditStartDate(toBRDate(championship.startDate || ''))
+      setEditEndDate(toBRDate(championship.endDate || ''))
       setEditRankingDate(toBRDate(championship.rankingDate || ''))
       setEditPaymentDeadline(toBRDate(championship.paymentDeadline || ''))
       setEditPaymentInfo(championship.paymentInfo || '')
@@ -118,6 +125,13 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
       setEditMainObjMetric(championship.mainObjectiveMetric ?? 'views_totais')
       setEditMainPositions(championship.mainPositions.map((p) => ({ ...p })))
       setEditSecondaryObjs(championship.secondaryObjectives.map((o) => ({ ...o, positions: o.positions?.map((p) => ({ ...p })) })))
+      setEditMainObjPeriodStart(toBRDate(championship.mainObjectivePeriodStart || ''))
+      setEditMainObjPeriodEnd(toBRDate(championship.mainObjectivePeriodEnd || ''))
+      const periods: Record<string, { start: string; end: string }> = {}
+      championship.secondaryObjectives.forEach((o) => {
+        periods[o.id] = { start: toBRDate(o.periodStart || ''), end: toBRDate(o.periodEnd || '') }
+      })
+      setEditSecObjPeriods(periods)
       setLocalRanking(championship.ranking.map((r) => ({ ...r })))
       setIsDirty(false)
       setEditCover('')
@@ -207,6 +221,8 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
       description: editDescription.trim() || undefined,
       cover: editCover || championship.cover,
       coverInternal: editCoverInternal || championship.coverInternal,
+      startDate: toISODate(editStartDate) || championship.startDate,
+      endDate: toISODate(editEndDate) || championship.endDate,
       rankingDate: toISODate(editRankingDate) || undefined,
       paymentDeadline: toISODate(editPaymentDeadline) || undefined,
       paymentInfo: editPaymentInfo.trim() || undefined,
@@ -215,11 +231,16 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
       mainObjectiveDescription: editMainObjDesc.trim() || championship.mainObjectiveDescription,
       mainObjectiveType: editMainObjType,
       mainObjectiveMetric: editMainObjType === 'direct' ? editMainObjMetric : undefined,
+      mainObjectivePeriodStart: editMainObjType === 'direct' ? (toISODate(editMainObjPeriodStart) || undefined) : undefined,
+      mainObjectivePeriodEnd: editMainObjType === 'direct' ? (toISODate(editMainObjPeriodEnd) || undefined) : undefined,
       mainPositions: editMainPositions.filter((p) => p.prize > 0),
       secondaryObjectives: editSecondaryObjs.filter((o) => o.description.trim()).map((editObj) => {
         const current = championship.secondaryObjectives.find((co) => co.id === editObj.id)
+        const period = editSecObjPeriods[editObj.id]
         return {
           ...editObj,
+          periodStart: editObj.type === 'direct' ? (toISODate(period?.start ?? '') || current?.periodStart) : undefined,
+          periodEnd: editObj.type === 'direct' ? (toISODate(period?.end ?? '') || current?.periodEnd) : undefined,
           positions: editObj.positions?.map((ep) => ({
             ...ep,
             winnerId: current?.positions?.find((cp) => cp.place === ep.place)?.winnerId,
@@ -1240,6 +1261,40 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
               />
             </div>
 
+            {/* Datas do campeonato */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="edit-start-date" className="mb-1.5 block text-xs font-medium text-[#888]">
+                  Data de Início
+                </label>
+                <input
+                  id="edit-start-date"
+                  type="text"
+                  inputMode="numeric"
+                  value={editStartDate}
+                  onChange={(e) => { setEditStartDate(applyDateMask(e.target.value)); setIsDirty(true) }}
+                  onBlur={() => setEditStartDate(completeDateYear(editStartDate))}
+                  placeholder="dd/mm/aaaa"
+                  className="w-full rounded-lg border border-[#1A1A1A] bg-[#111] px-4 py-3 text-sm text-white transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-end-date" className="mb-1.5 block text-xs font-medium text-[#888]">
+                  Data de Término
+                </label>
+                <input
+                  id="edit-end-date"
+                  type="text"
+                  inputMode="numeric"
+                  value={editEndDate}
+                  onChange={(e) => { setEditEndDate(applyDateMask(e.target.value)); setIsDirty(true) }}
+                  onBlur={() => setEditEndDate(completeDateYear(editEndDate))}
+                  placeholder="dd/mm/aaaa"
+                  className="w-full rounded-lg border border-[#1A1A1A] bg-[#111] px-4 py-3 text-sm text-white transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                />
+              </div>
+            </div>
+
             {/* Datas extras */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -1417,6 +1472,37 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                 </div>
               )}
 
+              {/* Período de Validade (só direct) */}
+              {editMainObjType === 'direct' && (
+                <div className="mb-4">
+                  <p className="mb-1.5 text-xs font-medium text-[#888]">
+                    Período de Validade <span className="text-[#444]">(opcional)</span>
+                  </p>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={editMainObjPeriodStart}
+                      onChange={(e) => { setEditMainObjPeriodStart(applyDateMask(e.target.value)); setIsDirty(true) }}
+                      onBlur={() => setEditMainObjPeriodStart(completeDateYear(editMainObjPeriodStart))}
+                      placeholder="Início dd/mm/aaaa"
+                      autoComplete="off"
+                      className="flex-1 rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                    />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={editMainObjPeriodEnd}
+                      onChange={(e) => { setEditMainObjPeriodEnd(applyDateMask(e.target.value)); setIsDirty(true) }}
+                      onBlur={() => setEditMainObjPeriodEnd(completeDateYear(editMainObjPeriodEnd))}
+                      placeholder="Fim dd/mm/aaaa"
+                      autoComplete="off"
+                      className="flex-1 rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Descrição */}
               <div className="mb-4">
                 <label htmlFor="edit-main-desc" className="mb-1.5 block text-xs font-medium text-[#888]">Nome do Objetivo</label>
@@ -1470,12 +1556,14 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                 <button
                   type="button"
                   onClick={() => {
+                    const newId = `s_${Date.now()}`
                     setEditSecondaryObjs((prev) => [...prev, {
-                      id: `s_${Date.now()}`,
+                      id: newId,
                       description: '',
                       type: 'subjective',
                       positions: [{ place: 1, prize: 0 }, { place: 2, prize: 0 }, { place: 3, prize: 0 }],
                     }])
+                    setEditSecObjPeriods((prev) => ({ ...prev, [newId]: { start: '', end: '' } }))
                     setIsDirty(true)
                   }}
                   className="rounded-full border border-[#1A1A1A] px-3 py-1 text-xs text-[#555] transition-colors hover:border-[#AAFF00]/40 hover:text-[#AAFF00]"
@@ -1559,6 +1647,37 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                               {label}
                             </button>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Período de Validade (só direct) */}
+                    {obj.type === 'direct' && (
+                      <div className="mb-3">
+                        <p className="mb-1.5 text-xs font-medium text-[#888]">
+                          Período de Validade <span className="text-[#444]">(opcional)</span>
+                        </p>
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={editSecObjPeriods[obj.id]?.start ?? ''}
+                            onChange={(e) => { setEditSecObjPeriods((prev) => ({ ...prev, [obj.id]: { ...prev[obj.id], start: applyDateMask(e.target.value) } })); setIsDirty(true) }}
+                            onBlur={() => { const v = completeDateYear(editSecObjPeriods[obj.id]?.start ?? ''); setEditSecObjPeriods((prev) => ({ ...prev, [obj.id]: { ...prev[obj.id], start: v } })) }}
+                            placeholder="Início dd/mm/aaaa"
+                            autoComplete="off"
+                            className="flex-1 rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                          />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={editSecObjPeriods[obj.id]?.end ?? ''}
+                            onChange={(e) => { setEditSecObjPeriods((prev) => ({ ...prev, [obj.id]: { ...prev[obj.id], end: applyDateMask(e.target.value) } })); setIsDirty(true) }}
+                            onBlur={() => { const v = completeDateYear(editSecObjPeriods[obj.id]?.end ?? ''); setEditSecObjPeriods((prev) => ({ ...prev, [obj.id]: { ...prev[obj.id], end: v } })) }}
+                            placeholder="Fim dd/mm/aaaa"
+                            autoComplete="off"
+                            className="flex-1 rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                          />
                         </div>
                       </div>
                     )}
