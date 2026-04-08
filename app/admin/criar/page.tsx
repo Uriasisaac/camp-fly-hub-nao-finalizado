@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import { SecondaryObjective, Position, ValidContentItem, RuleItem, DirectMetric, MainObjectiveType, DIRECT_METRIC_LABEL } from '@/lib/types'
-import { applyDateMask, toISODate } from '@/lib/format'
+import { applyDateMask, completeDateYear, toISODate } from '@/lib/format'
 import PrizeInput from '@/components/PrizeInput'
 
 function InputField({
-  label, id, type = 'text', value, onChange, placeholder, required, hint,
+  label, id, type = 'text', value, onChange, onBlur, placeholder, required, hint,
 }: {
   label: string; id: string; type?: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; required?: boolean; hint?: string;
+  onBlur?: () => void; placeholder?: string; required?: boolean; hint?: string;
 }) {
   return (
     <div>
@@ -22,6 +22,7 @@ function InputField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         required={required}
         autoComplete="off"
@@ -76,6 +77,9 @@ export default function CriarCampeonatoPage() {
   const [secondaryObjs, setSecondaryObjs] = useState<Omit<SecondaryObjective, 'id'>[]>([
     { description: '', type: 'subjective', positions: [{ place: 1, prize: 0 }, { place: 2, prize: 0 }, { place: 3, prize: 0 }] },
   ])
+  const [mainObjPeriodStart, setMainObjPeriodStart] = useState('')
+  const [mainObjPeriodEnd, setMainObjPeriodEnd] = useState('')
+  const [secPeriods, setSecPeriods] = useState<{ start: string; end: string }[]>([{ start: '', end: '' }])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [rankingDate, setRankingDate] = useState('')
@@ -107,6 +111,7 @@ export default function CriarCampeonatoPage() {
       ...prev,
       { description: '', type: 'subjective', positions: [{ place: 1, prize: 0 }, { place: 2, prize: 0 }, { place: 3, prize: 0 }] },
     ])
+    setSecPeriods((prev) => [...prev, { start: '', end: '' }])
   }
 
   function updateSecondaryDetails(index: number, value: string) {
@@ -143,6 +148,22 @@ export default function CriarCampeonatoPage() {
 
   function removeSecondaryObj(index: number) {
     setSecondaryObjs((prev) => prev.filter((_, i) => i !== index))
+    setSecPeriods((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function duplicateSecondaryObj(index: number) {
+    setSecondaryObjs((prev) => {
+      const copy = { ...prev[index], positions: prev[index].positions?.map((p) => ({ ...p })) }
+      const next = [...prev]
+      next.splice(index + 1, 0, copy)
+      return next
+    })
+    setSecPeriods((prev) => {
+      const copy = { ...prev[index] }
+      const next = [...prev]
+      next.splice(index + 1, 0, copy)
+      return next
+    })
   }
 
   function updateSecondaryDesc(index: number, value: string) {
@@ -245,6 +266,8 @@ export default function CriarCampeonatoPage() {
         mainObjectiveDescription: mainObjectiveDescription.trim(),
         mainObjectiveType,
         mainObjectiveMetric: mainObjectiveType === 'direct' ? mainObjectiveMetric : undefined,
+        mainObjectivePeriodStart: mainObjectiveType === 'direct' ? (toISODate(mainObjPeriodStart) || undefined) : undefined,
+        mainObjectivePeriodEnd: mainObjectiveType === 'direct' ? (toISODate(mainObjPeriodEnd) || undefined) : undefined,
         mainVideoReviews: [],
         mainPositions: mainPositions.filter((p) => p.prize > 0),
         secondaryObjectives: secondaryObjs
@@ -254,6 +277,11 @@ export default function CriarCampeonatoPage() {
             description: o.description,
             details: o.details?.trim() || undefined,
             type: o.type ?? 'ranking',
+            ...(o.type === 'direct' ? {
+              periodStart: toISODate(secPeriods[i]?.start ?? '') || undefined,
+              periodEnd: toISODate(secPeriods[i]?.end ?? '') || undefined,
+              metric: o.metric,
+            } : {}),
             ...(o.type === 'completion'
               ? { prizePerCompletion: o.prizePerCompletion ?? 0, maxCompletions: o.maxCompletions ?? 0, completions: [] }
               : { positions: (o.positions ?? []).filter((p: Position) => p.prize > 0) }
@@ -328,10 +356,10 @@ export default function CriarCampeonatoPage() {
                 Capa Principal
                 <span className="ml-1 text-[#444]">(1080 × 1400 px)</span>
               </label>
-              <div className="flex flex-col items-start gap-4 sm:flex-row">
+              <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-stretch">
                 <label
                   htmlFor="capa"
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#1A1A1A] bg-[#111] px-6 py-5 text-center transition-colors hover:border-[#AAFF00]/40 focus-within:border-[#AAFF00]"
+                  className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#1A1A1A] bg-[#111] px-6 py-5 text-center transition-colors hover:border-[#AAFF00]/40 focus-within:border-[#AAFF00]"
                 >
                   <span className="text-2xl" aria-hidden="true">🖼️</span>
                   <span className="text-xs text-[#555]">Clique para selecionar imagem</span>
@@ -448,19 +476,56 @@ export default function CriarCampeonatoPage() {
             </div>
 
             {mainObjectiveType === 'direct' && (
-              <div>
-                <p className="mb-1.5 text-xs font-medium text-[#888]">Métrica</p>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.entries(DIRECT_METRIC_LABEL) as [DirectMetric, string][]).map(([val, label]) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setMainObjectiveMetric(val)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${mainObjectiveMetric === val ? 'bg-[#AAFF00]/20 text-[#AAFF00] border border-[#AAFF00]/40' : 'border border-[#1A1A1A] text-[#555] hover:text-white'}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-[#888]">Métrica</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.entries(DIRECT_METRIC_LABEL) as [DirectMetric, string][]).map(([val, label]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setMainObjectiveMetric(val)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${mainObjectiveMetric === val ? 'bg-[#AAFF00]/20 text-[#AAFF00] border border-[#AAFF00]/40' : 'border border-[#1A1A1A] text-[#555] hover:text-white'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-[#888]">
+                    Período de Validade <span className="text-[#444]">(opcional)</span>
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="main-period-start" className="sr-only">Início do período</label>
+                      <input
+                        id="main-period-start"
+                        type="text"
+                        inputMode="numeric"
+                        value={mainObjPeriodStart}
+                        onChange={(e) => setMainObjPeriodStart(applyDateMask(e.target.value))}
+                        onBlur={() => setMainObjPeriodStart(completeDateYear(mainObjPeriodStart))}
+                        placeholder="Início dd/mm/aaaa"
+                        autoComplete="off"
+                        className="w-full rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="main-period-end" className="sr-only">Fim do período</label>
+                      <input
+                        id="main-period-end"
+                        type="text"
+                        inputMode="numeric"
+                        value={mainObjPeriodEnd}
+                        onChange={(e) => setMainObjPeriodEnd(applyDateMask(e.target.value))}
+                        onBlur={() => setMainObjPeriodEnd(completeDateYear(mainObjPeriodEnd))}
+                        placeholder="Fim dd/mm/aaaa"
+                        autoComplete="off"
+                        className="w-full rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -547,6 +612,15 @@ export default function CriarCampeonatoPage() {
                       className="w-full rounded-lg border border-[#1A1A1A] bg-[#0D0D0D] px-4 py-2.5 text-sm font-medium text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => duplicateSecondaryObj(i)}
+                    className="flex-none rounded-lg border border-[#1A1A1A] px-3 py-2.5 text-xs text-[#555] transition-colors hover:border-[#AAFF00]/40 hover:text-[#AAFF00]"
+                    aria-label={`Duplicar objetivo ${i + 1}`}
+                    title="Duplicar"
+                  >
+                    ⧉
+                  </button>
                   {secondaryObjs.length > 1 && (
                     <button
                       type="button"
@@ -578,7 +652,7 @@ export default function CriarCampeonatoPage() {
                 <div className="mb-3">
                 <p className="mb-1.5 text-xs font-medium text-[#888]">Tipo</p>
                 <div className="flex flex-wrap gap-2">
-                  {([['direct', 'Direto'], ['subjective', 'Manual'], ['completion', 'Conclusão']] as [SecondaryObjective['type'], string][]).map(([t, label]) => (
+                  {([['direct', 'Direto'], ['ranking', 'Manual'], ['completion', 'Conclusão']] as [SecondaryObjective['type'], string][]).map(([t, label]) => (
                     <button
                       key={t}
                       type="button"
@@ -602,22 +676,59 @@ export default function CriarCampeonatoPage() {
                   <p className="mb-3 text-[10px] text-[#444]">Cada participante recebe um prêmio fixo ao cumprir o objetivo. Você registra as conclusões no painel de gerenciamento.</p>
                 )}
 
-                {/* Direct: metric selector */}
+                {/* Direct: metric + period */}
                 {obj.type === 'direct' && (
-                  <div className="mb-3">
-                  <p className="mb-1.5 text-xs font-medium text-[#888]">Métrica</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(Object.entries(DIRECT_METRIC_LABEL) as [DirectMetric, string][]).map(([val, label]) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => updateSecondaryMetric(i, val)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${(obj.metric ?? 'views_totais') === val ? 'bg-[#AAFF00]/20 text-[#AAFF00] border border-[#AAFF00]/40' : 'border border-[#1A1A1A] text-[#555] hover:text-white'}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <div className="mb-3 flex flex-col gap-4">
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium text-[#888]">Métrica</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(Object.entries(DIRECT_METRIC_LABEL) as [DirectMetric, string][]).map(([val, label]) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => updateSecondaryMetric(i, val)}
+                            className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${(obj.metric ?? 'views_totais') === val ? 'bg-[#AAFF00]/20 text-[#AAFF00] border border-[#AAFF00]/40' : 'border border-[#1A1A1A] text-[#555] hover:text-white'}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium text-[#888]">
+                        Período de Validade <span className="text-[#444]">(opcional)</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor={`sec-period-start-${i}`} className="sr-only">Início do período — objetivo {i + 1}</label>
+                          <input
+                            id={`sec-period-start-${i}`}
+                            type="text"
+                            inputMode="numeric"
+                            value={secPeriods[i]?.start ?? ''}
+                            onChange={(e) => setSecPeriods((prev) => prev.map((p, pi) => pi === i ? { ...p, start: applyDateMask(e.target.value) } : p))}
+                            onBlur={() => setSecPeriods((prev) => prev.map((p, pi) => pi === i ? { ...p, start: completeDateYear(p.start) } : p))}
+                            placeholder="Início dd/mm/aaaa"
+                            autoComplete="off"
+                            className="w-full rounded-lg border border-[#1A1A1A] bg-[#0D0D0D] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor={`sec-period-end-${i}`} className="sr-only">Fim do período — objetivo {i + 1}</label>
+                          <input
+                            id={`sec-period-end-${i}`}
+                            type="text"
+                            inputMode="numeric"
+                            value={secPeriods[i]?.end ?? ''}
+                            onChange={(e) => setSecPeriods((prev) => prev.map((p, pi) => pi === i ? { ...p, end: applyDateMask(e.target.value) } : p))}
+                            onBlur={() => setSecPeriods((prev) => prev.map((p, pi) => pi === i ? { ...p, end: completeDateYear(p.end) } : p))}
+                            placeholder="Fim dd/mm/aaaa"
+                            autoComplete="off"
+                            className="w-full rounded-lg border border-[#1A1A1A] bg-[#0D0D0D] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -725,6 +836,7 @@ export default function CriarCampeonatoPage() {
               type="text"
               value={startDate}
               onChange={(v) => setStartDate(applyDateMask(v))}
+              onBlur={() => setStartDate(completeDateYear(startDate))}
               placeholder="dd/mm/aaaa"
               required
             />
@@ -734,15 +846,17 @@ export default function CriarCampeonatoPage() {
               type="text"
               value={endDate}
               onChange={(v) => setEndDate(applyDateMask(v))}
+              onBlur={() => setEndDate(completeDateYear(endDate))}
               placeholder="dd/mm/aaaa"
               required
             />
             <InputField
-              label="Data de Ranking Final"
+              label="Ranking Final"
               id="rankingDate"
               type="text"
               value={rankingDate}
               onChange={(v) => setRankingDate(applyDateMask(v))}
+              onBlur={() => setRankingDate(completeDateYear(rankingDate))}
               placeholder="dd/mm/aaaa"
               hint="Quando o ranking será fechado definitivamente"
             />
@@ -752,6 +866,7 @@ export default function CriarCampeonatoPage() {
               type="text"
               value={paymentDeadline}
               onChange={(v) => setPaymentDeadline(applyDateMask(v))}
+              onBlur={() => setPaymentDeadline(completeDateYear(paymentDeadline))}
               placeholder="dd/mm/aaaa"
               hint="Prazo máximo para os pagamentos serem efetuados"
             />
@@ -787,7 +902,7 @@ export default function CriarCampeonatoPage() {
                       <textarea
                         value={item.title}
                         onChange={(e) => updateValidContentField(i, 'title', e.target.value)}
-                        placeholder={`Conteúdo ${i + 1}…`}
+                        placeholder="Título (opcional)…"
                         rows={2}
                         aria-label={`Descrição do conteúdo ${i + 1}`}
                         className="w-full resize-y rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
@@ -835,7 +950,7 @@ export default function CriarCampeonatoPage() {
                       <textarea
                         value={rule.text}
                         onChange={(e) => updateRule(i, 'text', e.target.value)}
-                        placeholder={`Regra ${i + 1}…`}
+                        placeholder="Escreva a regra aqui, ou se preferir coloque apenas o link no campo abaixo"
                         rows={2}
                         aria-label={`Texto da regra ${i + 1}`}
                         className="w-full resize-y rounded-lg border border-[#1A1A1A] bg-[#111] px-3 py-2.5 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
@@ -866,7 +981,7 @@ export default function CriarCampeonatoPage() {
               id="paymentInfo"
               value={paymentInfo}
               onChange={setPaymentInfo}
-              placeholder="Descreva como será feito o pagamento, chave Pix, prazo, condições…"
+              placeholder="Descreva o que os participantes precisam fazer para receber o pagamento"
               rows={4}
             />
           </div>

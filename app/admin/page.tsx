@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useStore } from '@/lib/store'
-import { getEffectiveStatus, getPendingReviewCount } from '@/lib/types'
+import { getEffectiveStatus } from '@/lib/types'
 import Image from 'next/image'
 
 export default function AdminPage() {
@@ -57,7 +57,7 @@ export default function AdminPage() {
               Criar Novo Campeonato
             </h2>
             <p className="mt-1 text-sm text-[#555]">
-              Configure nome, capa, objetivos, premiações e regras.
+              Crie o nome, objetivos, conteúdos válidos e regras...
             </p>
           </div>
         </Link>
@@ -74,7 +74,7 @@ export default function AdminPage() {
               Gerenciar Campeonatos
             </h2>
             <p className="mt-1 text-sm text-[#555]">
-              Edite rankings, atribua premiações e gerencie participantes.
+              Veja os participantes, vídeos, atribua premiações e edite.
             </p>
           </div>
         </Link>
@@ -85,19 +85,18 @@ export default function AdminPage() {
         <h2 id="stats-heading" className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#555]">
           Visão Geral
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Total', value: championships.length, highlight: false },
-            { label: 'Ativos', value: championships.filter((c) => getEffectiveStatus(c) === 'active').length, highlight: false },
-            { label: 'Em breve', value: championships.filter((c) => getEffectiveStatus(c) === 'upcoming').length, highlight: false },
-            { label: 'Encerrados', value: championships.filter((c) => getEffectiveStatus(c) === 'finished').length, highlight: false },
-            { label: 'Para Revisar', value: getPendingReviewCount(championships), highlight: true },
+            { label: 'Total', value: championships.length },
+            { label: 'Ativos', value: championships.filter((c) => getEffectiveStatus(c) === 'active').length },
+            { label: 'Em breve', value: championships.filter((c) => getEffectiveStatus(c) === 'upcoming').length },
+            { label: 'Encerrados', value: championships.filter((c) => getEffectiveStatus(c) === 'finished').length },
           ].map((stat) => (
             <div
               key={stat.label}
-              className={`rounded-xl border p-4 text-center ${stat.highlight && stat.value > 0 ? 'border-[#FFB800]/30 bg-[#FFB800]/5' : 'border-[#1A1A1A] bg-[#0D0D0D]'}`}
+              className="rounded-xl border border-[#1A1A1A] bg-[#0D0D0D] p-4 text-center"
             >
-              <p className={`text-2xl font-black tabular-nums ${stat.highlight && stat.value > 0 ? 'text-[#FFB800]' : 'text-white'}`}>{stat.value}</p>
+              <p className="text-2xl font-black tabular-nums text-white">{stat.value}</p>
               <p className="mt-1 text-xs text-[#555]">{stat.label}</p>
             </div>
           ))}

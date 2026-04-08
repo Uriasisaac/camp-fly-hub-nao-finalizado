@@ -11,16 +11,32 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const userRef = useRef<HTMLInputElement>(null)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // Simulated async login (demo — accepts any credentials)
-    setTimeout(() => {
-      login()
-      router.push('/admin')
-    }, 800)
+    const form = e.currentTarget
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const { ok } = await res.json()
+      if (ok) {
+        login(password)
+        router.push('/admin')
+      } else {
+        setError('Usuário ou senha inválidos.')
+        setLoading(false)
+      }
+    } catch {
+      setError('Erro de conexão. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -97,7 +113,7 @@ export default function AdminLoginPage() {
           </button>
 
           <p className="mt-4 text-center text-xs text-[#333]">
-            Demonstrativo — qualquer usuário/senha funciona
+            Acesso restrito ao administrador
           </p>
         </form>
       </div>

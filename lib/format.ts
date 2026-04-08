@@ -6,6 +6,13 @@ export function applyDateMask(v: string): string {
   return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`
 }
 
+/** Completa o ano atual ao sair do campo (onBlur), se só dia/mês foram digitados */
+export function completeDateYear(v: string): string {
+  const d = v.replace(/\D/g, '')
+  if (d.length === 4) return `${d.slice(0, 2)}/${d.slice(2)}/${new Date().getFullYear()}`
+  return applyDateMask(v)
+}
+
 /** "25/04/2026" → "2026-04-25" */
 export function toISODate(br: string): string {
   const parts = br.split('/')

@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import WatermarkBackground from '@/components/WatermarkBackground'
+import ServerSync from '@/components/ServerSync'
 
 const geist = Geist({
   subsets: ['latin'],
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="relative min-h-full bg-black text-white antialiased">
         <WatermarkBackground />
         <div className="relative z-10 flex min-h-screen flex-col">
+          <ServerSync />
           <Navbar />
           <main id="main-content" className="flex-1">
             {children}

@@ -44,16 +44,18 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div
-            className="carousel-track flex gap-4 overflow-x-auto pb-4"
-            role="list"
-            aria-label="Campeonatos ativos"
-          >
-            {active.map((c) => (
-              <div key={c.id} role="listitem">
-                <ChampionshipCard championship={c} />
-              </div>
-            ))}
+          <div className="overflow-x-auto pb-4">
+            <div
+              className="carousel-track flex gap-4 px-2 py-2"
+              role="list"
+              aria-label="Campeonatos ativos"
+            >
+              {active.map((c) => (
+                <div key={c.id} role="listitem">
+                  <ChampionshipCard championship={c} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -70,16 +72,18 @@ export default function HomePage() {
               Em Breve
             </h2>
           </div>
-          <div
-            className="carousel-track flex gap-4 overflow-x-auto pb-4"
-            role="list"
-            aria-label="Campeonatos em breve"
-          >
-            {upcoming.map((c) => (
-              <div key={c.id} role="listitem">
-                <ChampionshipCard championship={c} />
-              </div>
-            ))}
+          <div className="overflow-x-auto pb-4">
+            <div
+              className="carousel-track flex gap-4 px-2 py-2"
+              role="list"
+              aria-label="Campeonatos em breve"
+            >
+              {upcoming.map((c) => (
+                <div key={c.id} role="listitem">
+                  <ChampionshipCard championship={c} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -96,16 +100,18 @@ export default function HomePage() {
               Encerrados
             </h2>
           </div>
-          <div
-            className="carousel-track flex gap-4 overflow-x-auto pb-4"
-            role="list"
-            aria-label="Campeonatos encerrados"
-          >
-            {finished.map((c) => (
-              <div key={c.id} role="listitem">
-                <ChampionshipCard championship={c} />
-              </div>
-            ))}
+          <div className="overflow-x-auto pb-4">
+            <div
+              className="carousel-track flex gap-4 px-2 py-2"
+              role="list"
+              aria-label="Campeonatos encerrados"
+            >
+              {finished.map((c) => (
+                <div key={c.id} role="listitem">
+                  <ChampionshipCard championship={c} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}

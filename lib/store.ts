@@ -1,29 +1,42 @@
 'use client'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { Championship, RankingEntry, Participant, VideoReview } from './types'
+import { Championship, RankingEntry, Participant, Video, VideoReview } from './types'
 import { MOCK_CHAMPIONSHIPS } from './mock-data'
 
 interface AppStore {
   championships: Championship[]
   isAdmin: boolean
-  login: () => void
+  adminSecret: string | null
+  login: (secret: string) => void
   logout: () => void
   resetToDefaults: () => void
+  loadFromServer: () => Promise<void>
+  syncToServer: () => Promise<void>
   addChampionship: (data: Omit<Championship, 'id' | 'participants' | 'videos' | 'ranking' | 'status'>) => void
   updateChampionshipInfo: (id: string, fields: {
     name?: string; description?: string; cover?: string; coverInternal?: string
     rankingDate?: string; paymentDeadline?: string; paymentInfo?: string
     validContent?: Championship['validContent']; rules?: Championship['rules']
+    mainObjectiveDescription?: string
+    mainObjectiveType?: Championship['mainObjectiveType']
+    mainObjectiveMetric?: Championship['mainObjectiveMetric']
+    mainPositions?: Championship['mainPositions']
+    secondaryObjectives?: Championship['secondaryObjectives']
   }) => void
   deleteChampionship: (id: string) => void
   updateRanking: (id: string, ranking: RankingEntry[]) => void
   assignMainPositionWinner: (cId: string, place: number, winnerId: string) => void
   assignSecondaryWinner: (cId: string, oId: string, place: number, winnerId: string) => void
+  setMainObjectiveManualOverride: (cId: string, override: boolean) => void
+  setSecondaryObjectiveManualOverride: (cId: string, oId: string, override: boolean) => void
+  updateMainObjectivePeriod: (cId: string, periodStart?: string, periodEnd?: string) => void
+  updateSecondaryObjectivePeriod: (cId: string, oId: string, periodStart?: string, periodEnd?: string) => void
   addCompletion: (cId: string, oId: string, participantId: string) => void
   removeCompletion: (cId: string, oId: string, index: number) => void
   addParticipant: (cId: string, participant: Omit<Participant, 'id'>) => void
   removeParticipant: (cId: string, participantId: string) => void
+  addVideo: (cId: string, video: Omit<Video, 'id'>) => void
   // Video review actions
   setMainVideoReview: (cId: string, review: VideoReview) => void
   setObjVideoReview: (cId: string, objId: string, review: VideoReview) => void
@@ -33,13 +46,44 @@ interface AppStore {
 
 export const useStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       championships: MOCK_CHAMPIONSHIPS,
       isAdmin: false,
+      adminSecret: null,
 
-      login: () => set({ isAdmin: true }),
-      logout: () => set({ isAdmin: false }),
+      login: (secret) => set({ isAdmin: true, adminSecret: secret }),
+      logout: () => set({ isAdmin: false, adminSecret: null }),
       resetToDefaults: () => set({ championships: MOCK_CHAMPIONSHIPS }),
+
+      loadFromServer: async () => {
+        try {
+          const res = await fetch('/api/championships')
+          if (!res.ok) return
+          const data = await res.json()
+          if (Array.isArray(data)) {
+            set({ championships: data })
+          }
+        } catch {
+          // Network error — keep local data
+        }
+      },
+
+      syncToServer: async () => {
+        const { championships, adminSecret } = get()
+        if (!adminSecret) return
+        try {
+          await fetch('/api/championships', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminSecret}`,
+            },
+            body: JSON.stringify(championships),
+          })
+        } catch {
+          // Sync failed silently
+        }
+      },
 
       addChampionship: (data) => {
         const newChamp: Championship = {
@@ -85,6 +129,54 @@ export const useStore = create<AppStore>()(
                     o.id === oId
                       ? { ...o, positions: (o.positions ?? []).map((p) => p.place === place ? { ...p, winnerId } : p) }
                       : o
+                  ),
+                }
+              : c
+          ),
+        }))
+      },
+
+      setMainObjectiveManualOverride: (cId, override) => {
+        set((s) => ({
+          championships: s.championships.map((c) =>
+            c.id === cId ? { ...c, mainObjectiveManualOverride: override } : c
+          ),
+        }))
+      },
+
+      setSecondaryObjectiveManualOverride: (cId, oId, override) => {
+        set((s) => ({
+          championships: s.championships.map((c) =>
+            c.id === cId
+              ? {
+                  ...c,
+                  secondaryObjectives: c.secondaryObjectives.map((o) =>
+                    o.id === oId ? { ...o, manualOverride: override } : o
+                  ),
+                }
+              : c
+          ),
+        }))
+      },
+
+      updateMainObjectivePeriod: (cId, periodStart, periodEnd) => {
+        set((s) => ({
+          championships: s.championships.map((c) =>
+            c.id === cId
+              ? { ...c, mainObjectivePeriodStart: periodStart, mainObjectivePeriodEnd: periodEnd }
+              : c
+          ),
+        }))
+      },
+
+      updateSecondaryObjectivePeriod: (cId, oId, periodStart, periodEnd) => {
+        set((s) => ({
+          championships: s.championships.map((c) =>
+            c.id === cId
+              ? {
+                  ...c,
+                  secondaryObjectives: c.secondaryObjectives.map((o) =>
+                    o.id === oId ? { ...o, periodStart, periodEnd } : o
                   ),
                 }
               : c
@@ -150,6 +242,16 @@ export const useStore = create<AppStore>()(
         }))
       },
 
+      addVideo: (cId, video) => {
+        set((s) => ({
+          championships: s.championships.map((c) =>
+            c.id === cId
+              ? { ...c, videos: [...c.videos, { ...video, id: `v_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }] }
+              : c
+          ),
+        }))
+      },
+
       setMainVideoReview: (cId, review) => {
         set((s) => ({
           championships: s.championships.map((c) => {
@@ -206,6 +308,10 @@ export const useStore = create<AppStore>()(
     {
       name: 'fly-hub-storage',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        championships: state.championships,
+        isAdmin: state.isAdmin,
+      }),
     }
   )
 )

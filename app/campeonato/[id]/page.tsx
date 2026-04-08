@@ -1,7 +1,7 @@
 'use client'
 import { use } from 'react'
 import { useStore } from '@/lib/store'
-import { getRuleText, getRuleUrl, getEffectiveMainRanking, computeDirectRanking, buildSubjectiveRanking } from '@/lib/types'
+import { getRuleText, getRuleUrl, getEffectiveMainRanking, getEffectiveSecondaryRanking, computeDirectRanking, buildSubjectiveRanking } from '@/lib/types'
 import ProgressBar from '@/components/ProgressBar'
 import RankingTable from '@/components/RankingTable'
 import Link from 'next/link'
@@ -62,12 +62,8 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
     effectiveMainRanking.reduce((s, r) => s + (r.prize ?? 0), 0) +
     championship.secondaryObjectives.reduce((s, obj) => {
       if (obj.type === 'completion') return s + (obj.completions ?? []).length * (obj.prizePerCompletion ?? 0)
-      if (obj.type === 'direct' && obj.metric) {
-        const r = computeDirectRanking(championship, obj.metric, obj.positions ?? [])
-        return s + r.reduce((ps, e) => ps + (e.prize ?? 0), 0)
-      }
-      if (obj.type === 'subjective') {
-        const r = buildSubjectiveRanking(obj.videoReviews ?? [], obj.positions ?? [], championship)
+      if (obj.type === 'direct') {
+        const r = getEffectiveSecondaryRanking(obj, championship)
         return s + r.reduce((ps, e) => ps + (e.prize ?? 0), 0)
       }
       return s + (obj.positions ?? []).filter((p) => p.winnerId).reduce((ps, p) => ps + p.prize, 0)
@@ -78,9 +74,9 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
       {/* Back */}
       <Link
         href="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-[#555] transition-colors hover:text-white"
+        className="mb-6 inline-flex items-center justify-center rounded-lg border border-[#AAFF00]/40 px-4 py-1.5 text-sm font-bold text-[#AAFF00] transition-all hover:bg-[#AAFF00]/10"
       >
-        <span aria-hidden="true">←</span> Todos os campeonatos
+        Voltar
       </Link>
 
       {/* Header */}
@@ -212,9 +208,9 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
             <p className="mb-3 text-xs leading-relaxed text-[#555]">{obj.details}</p>
           )}
 
-          {/* Direct type: auto-computed ranking */}
+          {/* Direct type: auto-computed or manual override ranking */}
           {obj.type === 'direct' && obj.metric && (() => {
-            const ranking = computeDirectRanking(championship, obj.metric, obj.positions ?? [])
+            const ranking = getEffectiveSecondaryRanking(obj, championship)
             return (
               <div className="flex flex-col gap-2">
                 {(obj.positions ?? []).map((pos) => {
@@ -238,30 +234,26 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
             )
           })()}
 
-          {/* Subjective type: placed positions */}
-          {obj.type === 'subjective' && (() => {
-            const ranking = buildSubjectiveRanking(obj.videoReviews ?? [], obj.positions ?? [], championship)
-            return (
-              <div className="flex flex-col gap-2">
-                {(obj.positions ?? []).map((pos) => {
-                  const entry = ranking.find((r) => r.position === pos.place)
-                  const participant = entry ? championship.participants.find((p) => p.id === entry.participantId) : null
-                  const medal = ['🥇', '🥈', '🥉'][pos.place - 1] ?? `${pos.place}º`
-                  return (
-                    <div key={pos.place} className="flex items-center gap-3 rounded-lg bg-[#111] px-4 py-2.5">
-                      <span className="text-base" aria-label={`${pos.place}º lugar`}>{medal}</span>
-                      <span className="flex-1 text-sm text-[#888]">
-                        {participant ? participant.name : <span className="text-[#333]">A definir</span>}
-                      </span>
-                      <span className="rounded-full bg-[#AAFF00]/10 px-3 py-1 text-xs font-bold tabular-nums text-[#AAFF00]">
-                        {formatBRL(pos.prize)}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })()}
+          {/* Subjective/Manual type: direct winner per position */}
+          {obj.type === 'subjective' && (
+            <div className="flex flex-col gap-2">
+              {(obj.positions ?? []).map((pos) => {
+                const winner = championship.participants.find((p) => p.id === pos.winnerId)
+                const medal = ['🥇', '🥈', '🥉'][pos.place - 1] ?? `${pos.place}º`
+                return (
+                  <div key={pos.place} className="flex items-center gap-3 rounded-lg bg-[#111] px-4 py-2.5">
+                    <span className="text-base" aria-label={`${pos.place}º lugar`}>{medal}</span>
+                    <span className="flex-1 text-sm text-[#888]">
+                      {winner ? winner.name : <span className="text-[#333]">A definir</span>}
+                    </span>
+                    <span className="rounded-full bg-[#AAFF00]/10 px-3 py-1 text-xs font-bold tabular-nums text-[#AAFF00]">
+                      {formatBRL(pos.prize)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {/* Legacy ranking type: position-by-position */}
           {(!obj.type || obj.type === 'ranking') && (

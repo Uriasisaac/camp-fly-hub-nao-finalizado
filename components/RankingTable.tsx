@@ -5,12 +5,6 @@ interface RankingTableProps {
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
-const PLATFORM_LABELS: Record<string, string> = {
-  youtube: 'YT',
-  instagram: 'IG',
-  tiktok: 'TK',
-  kwai: 'KW',
-}
 
 function formatViews(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -23,22 +17,15 @@ function formatBRL(n: number): string {
 }
 
 export default function RankingTable({ championship }: RankingTableProps) {
-  const { participants, videos, mainPositions } = championship
+  const { participants, mainPositions } = championship
   const ranking = getEffectiveMainRanking(championship)
 
-  // Build rows: always show prized positions, fill with ranking entries if available
   const prizedRows = mainPositions.map((pos) => {
     const entry = ranking.find((r) => r.position === pos.place)
     const participant = entry ? participants.find((p) => p.id === entry.participantId) ?? null : null
-    return {
-      position: pos.place,
-      prize: pos.prize,
-      participant,
-      views: entry?.views ?? null,
-    }
+    return { position: pos.place, prize: pos.prize, participant, views: entry?.views ?? null }
   })
 
-  // Extra ranking entries beyond prized positions (prize = 0)
   const extraRows = ranking
     .filter((r) => r.position > mainPositions.length)
     .map((r) => ({
@@ -51,80 +38,62 @@ export default function RankingTable({ championship }: RankingTableProps) {
   const rows = [...prizedRows, ...extraRows]
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[400px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-[#1A1A1A]">
-            <th className="py-3 pr-4 text-left text-xs font-medium text-[#555] w-10">#</th>
-            <th className="py-3 pr-4 text-left text-xs font-medium text-[#555]">Participante</th>
-            <th className="py-3 pr-4 text-right text-xs font-medium text-[#555]">Views</th>
-            <th className="py-3 text-right text-xs font-medium text-[#555]">Prêmio</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const participantVideos = row.participant
-              ? videos.filter((v) => v.participantId === row.participant!.id)
-              : []
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-1 grid grid-cols-[2rem_1fr_auto_auto] gap-x-3 border-b border-[#1A1A1A] pb-2">
+        <span className="text-xs font-medium text-[#555]">#</span>
+        <span className="text-xs font-medium text-[#555]">Participante</span>
+        <span className="text-right text-xs font-medium text-[#555]">Views</span>
+        <span className="text-right text-xs font-medium text-[#555]">Prêmio</span>
+      </div>
 
-            return (
-              <tr
-                key={row.position}
-                className="border-b border-[#0F0F0F] transition-colors hover:bg-[#0D0D0D]"
-              >
-                <td className="py-3.5 pr-4 font-bold tabular-nums">
-                  {row.position <= 3 ? (
-                    <span aria-label={`${row.position}º lugar`}>{MEDALS[row.position - 1]}</span>
-                  ) : (
-                    <span className="text-[#555]">{row.position}º</span>
-                  )}
-                </td>
-                <td className="py-3.5 pr-4">
-                  {row.participant ? (
-                    <div className="flex min-w-0 flex-col">
-                      <span className="truncate font-semibold text-white">{row.participant.name}</span>
-                      <span className="text-xs text-[#555]">{row.participant.handle}</span>
-                      {participantVideos.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {participantVideos.map((v) => (
-                            <span
-                              key={v.id}
-                              className="rounded bg-[#1A1A1A] px-1.5 py-0.5 text-[10px] text-[#666]"
-                            >
-                              {PLATFORM_LABELS[v.platform]} · {v.title.slice(0, 22)}{v.title.length > 22 ? '…' : ''}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-[#333]">A definir</span>
-                  )}
-                </td>
-                <td className="py-3.5 pr-4 text-right font-bold tabular-nums text-white">
-                  {row.views !== null ? formatViews(row.views) : <span className="text-[#222]">—</span>}
-                </td>
-                <td className="py-3.5 text-right">
-                  {row.prize > 0 ? (
-                    <span className="rounded-full bg-[#AAFF00]/10 px-3 py-1 font-bold tabular-nums text-[#AAFF00]">
-                      {formatBRL(row.prize)}
-                    </span>
-                  ) : (
-                    <span className="text-[#333]">—</span>
-                  )}
-                </td>
-              </tr>
-            )
-          })}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={4} className="py-12 text-center text-[#444]">
-                Ranking ainda não disponível
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {rows.length === 0 && (
+        <p className="py-12 text-center text-sm text-[#444]">Ranking ainda não disponível</p>
+      )}
+
+      <div className="flex flex-col">
+        {rows.map((row) => (
+          <div
+            key={row.position}
+            className="grid grid-cols-[2rem_1fr_auto_auto] items-center gap-x-3 border-b border-[#0F0F0F] py-3 transition-colors hover:bg-[#0D0D0D]"
+          >
+            {/* Posição */}
+            <span className="font-bold tabular-nums" aria-label={`${row.position}º lugar`}>
+              {row.position <= 3
+                ? MEDALS[row.position - 1]
+                : <span className="text-sm text-[#555]">{row.position}º</span>}
+            </span>
+
+            {/* Participante */}
+            <div className="min-w-0">
+              {row.participant ? (
+                <>
+                  <p className="truncate text-sm font-semibold text-white">{row.participant.name}</p>
+                  <p className="truncate text-xs text-[#555]">{row.participant.handle}</p>
+                </>
+              ) : (
+                <span className="text-sm text-[#333]">A definir</span>
+              )}
+            </div>
+
+            {/* Views */}
+            <span className="text-right text-sm font-bold tabular-nums text-white">
+              {row.views !== null ? formatViews(row.views) : <span className="text-[#222]">—</span>}
+            </span>
+
+            {/* Prêmio */}
+            <span className="text-right">
+              {row.prize > 0 ? (
+                <span className="rounded-full bg-[#AAFF00]/10 px-2.5 py-1 text-xs font-bold tabular-nums text-[#AAFF00]">
+                  {formatBRL(row.prize)}
+                </span>
+              ) : (
+                <span className="text-sm text-[#333]">—</span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

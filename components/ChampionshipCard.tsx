@@ -36,11 +36,11 @@ export default function ChampionshipCard({ championship }: ChampionshipCardProps
   return (
     <Link
       href={`/campeonato/${championship.id}`}
-      className="carousel-item group relative block flex-none rounded-xl border border-[#1A1A1A] transition-all duration-300 hover:border-[#AAFF00]/40 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[#AAFF00]"
+      className="carousel-item group relative block flex-none overflow-hidden rounded-xl border border-[#1A1A1A] transition-all duration-300 hover:border-[#AAFF00]/40 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[#AAFF00]"
       style={{ width: 'clamp(180px, 44vw, 260px)' }}
       aria-label={`${championship.name} — ${STATUS_LABEL[status]}`}
     >
-      <div className="overflow-hidden rounded-xl">
+      <div>
       {/* Cover */}
       <div
         className="relative w-full"

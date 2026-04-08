@@ -57,6 +57,9 @@ export interface SecondaryObjective {
   type?: 'ranking' | 'completion' | 'direct' | 'subjective'
   // direct
   metric?: DirectMetric
+  manualOverride?: boolean
+  periodStart?: string
+  periodEnd?: string
   // ranking / subjective / direct — prize structure
   positions?: Position[]
   // completion
@@ -77,6 +80,34 @@ export interface RankingEntry {
 
 export type MainObjectiveType = 'direct' | 'subjective' | 'manual'
 
+export function buildManualOverrideRanking(positions: Position[], championship: Championship): RankingEntry[] {
+  return positions
+    .filter((p) => p.winnerId)
+    .sort((a, b) => a.place - b.place)
+    .map((p) => {
+      const videos = championship.videos.filter((v) => v.participantId === p.winnerId)
+      const views = videos.reduce((s, v) => s + v.views, 0)
+      return {
+        position: p.place,
+        participantId: p.winnerId!,
+        views,
+        prize: p.prize,
+        adminAssigned: true,
+      }
+    })
+}
+
+export function getEffectiveSecondaryRanking(obj: SecondaryObjective, championship: Championship): RankingEntry[] {
+  if (obj.type === 'direct' && obj.metric) {
+    if (obj.manualOverride) return buildManualOverrideRanking(obj.positions ?? [], championship)
+    return computeDirectRanking(championship, obj.metric, obj.positions ?? [], obj.periodStart, obj.periodEnd)
+  }
+  if (obj.type === 'subjective') {
+    return buildSubjectiveRanking(obj.videoReviews ?? [], obj.positions ?? [], championship)
+  }
+  return []
+}
+
 export interface Championship {
   id: string
   name: string
@@ -87,6 +118,9 @@ export interface Championship {
   mainObjectiveDescription: string
   mainObjectiveType?: MainObjectiveType
   mainObjectiveMetric?: DirectMetric
+  mainObjectiveManualOverride?: boolean
+  mainObjectivePeriodStart?: string
+  mainObjectivePeriodEnd?: string
   mainVideoReviews?: VideoReview[]
   mainPositions: Position[]
   secondaryObjectives: SecondaryObjective[]
@@ -113,10 +147,19 @@ export function getEffectiveStatus(c: Championship): 'active' | 'finished' | 'up
 export function computeDirectRanking(
   c: Championship,
   metric: DirectMetric,
-  positions: Position[]
+  positions: Position[],
+  periodStart?: string,
+  periodEnd?: string
 ): RankingEntry[] {
+  const filteredVideos = (periodStart || periodEnd)
+    ? c.videos.filter((v) => {
+        if (periodStart && v.postedAt < periodStart) return false
+        if (periodEnd && v.postedAt > periodEnd) return false
+        return true
+      })
+    : c.videos
   const scores = c.participants.map((p) => {
-    const pvids = c.videos.filter((v) => v.participantId === p.id)
+    const pvids = filteredVideos.filter((v) => v.participantId === p.id)
     let score = 0
     if (metric === 'views_totais') score = pvids.reduce((s, v) => s + v.views, 0)
     else if (metric === 'melhor_video') score = pvids.length ? Math.max(...pvids.map((v) => v.views)) : 0
@@ -156,7 +199,8 @@ export function buildSubjectiveRanking(
 
 export function getEffectiveMainRanking(c: Championship): RankingEntry[] {
   if (c.mainObjectiveType === 'direct' && c.mainObjectiveMetric) {
-    return computeDirectRanking(c, c.mainObjectiveMetric, c.mainPositions)
+    if (c.mainObjectiveManualOverride) return buildManualOverrideRanking(c.mainPositions, c)
+    return computeDirectRanking(c, c.mainObjectiveMetric, c.mainPositions, c.mainObjectivePeriodStart, c.mainObjectivePeriodEnd)
   }
   if (c.mainObjectiveType === 'subjective') {
     return buildSubjectiveRanking(c.mainVideoReviews ?? [], c.mainPositions, c)
@@ -200,15 +244,11 @@ export function getDistributedPrize(c: Championship): number {
   const main = mainRanking.filter((r) => r.prize && r.prize > 0).reduce((s, r) => s + (r.prize ?? 0), 0)
   const secondary = c.secondaryObjectives.reduce((s, o) => {
     if (o.type === 'completion') return s + (o.completions ?? []).length * (o.prizePerCompletion ?? 0)
-    if (o.type === 'direct' && o.metric) {
-      const ranking = computeDirectRanking(c, o.metric, o.positions ?? [])
+    if (o.type === 'direct') {
+      const ranking = getEffectiveSecondaryRanking(o, c)
       return s + ranking.filter((r) => r.prize && r.prize > 0).reduce((ps, r) => ps + (r.prize ?? 0), 0)
     }
-    if (o.type === 'subjective') {
-      const ranking = buildSubjectiveRanking(o.videoReviews ?? [], o.positions ?? [], c)
-      return s + ranking.reduce((ps, r) => ps + (r.prize ?? 0), 0)
-    }
-    // ranking (legacy)
+    // subjective (manual) e ranking (legacy): lê winnerId das posições
     return s + (o.positions ?? []).filter((p) => p.winnerId).reduce((ps, p) => ps + p.prize, 0)
   }, 0)
   return main + secondary
