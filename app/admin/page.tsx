@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useStore } from '@/lib/store'
@@ -11,6 +11,9 @@ export default function AdminPage() {
   const isAdmin = useStore((s) => s.isAdmin)
   const logout = useStore((s) => s.logout)
   const championships = useStore((s) => s.championships)
+  const syncToServer = useStore((s) => s.syncToServer)
+  const adminSecret = useStore((s) => s.adminSecret)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
 
   useEffect(() => {
     if (!isAdmin) router.replace('/admin/login')
@@ -21,6 +24,18 @@ export default function AdminPage() {
   function handleLogout() {
     logout()
     router.push('/')
+  }
+
+  async function handleSync() {
+    setSyncStatus('syncing')
+    try {
+      await syncToServer()
+      setSyncStatus('ok')
+      setTimeout(() => setSyncStatus('idle'), 3000)
+    } catch {
+      setSyncStatus('error')
+      setTimeout(() => setSyncStatus('idle'), 3000)
+    }
   }
 
   return (
@@ -34,13 +49,32 @@ export default function AdminPage() {
             <h1 className="text-lg font-black text-white">Administrador</h1>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-full border border-[#1A1A1A] px-4 py-1.5 text-xs text-[#555] transition-colors hover:border-red-500/40 hover:text-red-400"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-2">
+          {adminSecret && (
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={syncStatus === 'syncing'}
+              className={`rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-50 ${
+                syncStatus === 'ok' ? 'border-[#AAFF00]/40 text-[#AAFF00]' :
+                syncStatus === 'error' ? 'border-red-500/40 text-red-400' :
+                'border-[#1A1A1A] text-[#555] hover:border-[#AAFF00]/40 hover:text-[#AAFF00]'
+              }`}
+            >
+              {syncStatus === 'syncing' ? 'Sincronizando…' :
+               syncStatus === 'ok' ? '✓ Sincronizado' :
+               syncStatus === 'error' ? 'Erro no sync' :
+               'Sincronizar'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-full border border-[#1A1A1A] px-4 py-1.5 text-xs text-[#555] transition-colors hover:border-red-500/40 hover:text-red-400"
+          >
+            Sair
+          </button>
+        </div>
       </div>
 
       {/* Main actions */}
