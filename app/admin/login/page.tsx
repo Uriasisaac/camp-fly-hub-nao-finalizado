@@ -28,6 +28,8 @@ export default function AdminLoginPage() {
       const { ok } = await res.json()
       if (ok) {
         login(password)
+        // Sync local data to KV immediately after login
+        await useStore.getState().syncToServer()
         router.push('/admin')
       } else {
         setError('Usuário ou senha inválidos.')
