@@ -314,6 +314,7 @@ export const useStore = create<AppStore>()(
       partialize: (state) => ({
         championships: state.championships,
         isAdmin: state.isAdmin,
+        adminSecret: state.adminSecret,
       }),
     }
   )

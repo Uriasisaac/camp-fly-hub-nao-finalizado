@@ -239,9 +239,18 @@ export default function CriarCampeonatoPage() {
   function validate(): string[] {
     const errs: string[] = []
     if (!name.trim()) errs.push('Nome do campeonato é obrigatório.')
+
+    const isoStart = toISODate(startDate)
+    const isoEnd = toISODate(endDate)
+
     if (!startDate) errs.push('Data de início é obrigatória.')
+    else if (!isoStart) errs.push('Data de início inválida. Use o formato dd/mm/aaaa completo.')
+
     if (!endDate) errs.push('Data de término é obrigatória.')
-    if (startDate && endDate && toISODate(startDate) >= toISODate(endDate)) errs.push('Data de término deve ser após o início.')
+    else if (!isoEnd) errs.push('Data de término inválida. Use o formato dd/mm/aaaa completo.')
+
+    if (isoStart && isoEnd && isoStart >= isoEnd) errs.push('Data de término deve ser após o início.')
+
     if (!validContent.some((v) => v.title.trim() || v.url?.trim())) errs.push('Adicione ao menos um conteúdo válido.')
     if (!rules.some((r) => r.text.trim() || r.url?.trim())) errs.push('Adicione ao menos uma regra.')
     return errs
@@ -252,6 +261,7 @@ export default function CriarCampeonatoPage() {
     const errs = validate()
     if (errs.length > 0) {
       setErrors(errs)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
     setErrors([])
