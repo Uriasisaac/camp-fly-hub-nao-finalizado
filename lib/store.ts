@@ -73,19 +73,16 @@ export const useStore = create<AppStore>()(
 
       syncToServer: async () => {
         const { championships, adminSecret } = get()
-        if (!adminSecret) return
-        try {
-          await fetch('/api/championships', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminSecret}`,
-            },
-            body: JSON.stringify(championships),
-          })
-        } catch {
-          // Sync failed silently
-        }
+        if (!adminSecret) throw new Error('no-secret')
+        const res = await fetch('/api/championships', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminSecret}`,
+          },
+          body: JSON.stringify(championships),
+        })
+        if (!res.ok) throw new Error(`http-${res.status}`)
       },
 
       addChampionship: (data) => {

@@ -50,23 +50,21 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {adminSecret && (
-            <button
-              type="button"
-              onClick={handleSync}
-              disabled={syncStatus === 'syncing'}
-              className={`rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-50 ${
-                syncStatus === 'ok' ? 'border-[#AAFF00]/40 text-[#AAFF00]' :
-                syncStatus === 'error' ? 'border-red-500/40 text-red-400' :
-                'border-[#1A1A1A] text-[#555] hover:border-[#AAFF00]/40 hover:text-[#AAFF00]'
-              }`}
-            >
-              {syncStatus === 'syncing' ? 'Sincronizando…' :
-               syncStatus === 'ok' ? '✓ Sincronizado' :
-               syncStatus === 'error' ? 'Erro no sync' :
-               'Sincronizar'}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncStatus === 'syncing'}
+            className={`rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-50 ${
+              syncStatus === 'ok' ? 'border-[#AAFF00]/40 text-[#AAFF00]' :
+              syncStatus === 'error' ? 'border-red-500/40 text-red-400' :
+              'border-[#1A1A1A] text-[#555] hover:border-[#AAFF00]/40 hover:text-[#AAFF00]'
+            }`}
+          >
+            {syncStatus === 'syncing' ? 'Sincronizando…' :
+             syncStatus === 'ok' ? '✓ Sincronizado' :
+             syncStatus === 'error' ? 'Erro — faça login novamente' :
+             'Sincronizar'}
+          </button>
           <button
             type="button"
             onClick={handleLogout}
