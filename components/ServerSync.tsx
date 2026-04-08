@@ -4,7 +4,7 @@ import { useStore } from '@/lib/store'
 
 export default function ServerSync() {
   const loadFromServer = useStore((s) => s.loadFromServer)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Load authoritative data from KV on first render
   useEffect(() => {
