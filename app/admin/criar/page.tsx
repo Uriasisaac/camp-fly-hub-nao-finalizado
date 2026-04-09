@@ -87,7 +87,6 @@ export default function CriarCampeonatoPage() {
   const [validContent, setValidContent] = useState<ValidContentItem[]>([{ title: '', url: '' }])
   const [rules, setRules] = useState<RuleItem[]>([{ text: '' }])
   const [paymentInfo, setPaymentInfo] = useState('')
-  const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
   useEffect(() => {
@@ -265,9 +264,7 @@ export default function CriarCampeonatoPage() {
       return
     }
     setErrors([])
-    setSaving(true)
-
-    setTimeout(() => {
+    try {
       addChampionship({
         name: name.trim(),
         description: description.trim() || undefined,
@@ -306,7 +303,10 @@ export default function CriarCampeonatoPage() {
         paymentInfo: paymentInfo.trim() || undefined,
       })
       router.push('/admin/gerenciar')
-    }, 600)
+    } catch (err) {
+      setErrors([`Erro ao criar campeonato: ${err instanceof Error ? err.message : String(err)}`])
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   if (!isAdmin) return null
@@ -1000,17 +1000,9 @@ export default function CriarCampeonatoPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={saving}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#AAFF00] py-3.5 text-sm font-bold text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#AAFF00] py-3.5 text-sm font-bold text-black transition-opacity hover:opacity-80"
         >
-          {saving ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" aria-hidden="true" />
-              Criando…
-            </>
-          ) : (
-            'Criar Campeonato'
-          )}
+          Criar Campeonato
         </button>
       </form>
     </div>
