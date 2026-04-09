@@ -95,7 +95,11 @@ export const useStore = create<AppStore>()(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
-        if (!res.ok) throw new Error(`http-${res.status}`)
+        if (!res.ok) {
+          let detail = `http-${res.status}`
+          try { const b = await res.json(); if (b?.error) detail = b.error } catch {}
+          throw new Error(detail)
+        }
       },
 
       addChampionship: (data) => {
