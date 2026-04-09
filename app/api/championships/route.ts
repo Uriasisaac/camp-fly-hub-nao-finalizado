@@ -2,18 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const KV_KEY = 'fly-hub-championships'
+const TABLE = 'store'
+const ROW_KEY = 'championships'
 
-async function getKV() {
-  const { kv } = await import('@vercel/kv')
-  return kv
+function supabase() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY
+  if (!url || !key) throw new Error('Supabase env vars not set')
+  return { url, key }
 }
 
 export async function GET() {
   try {
-    const kv = await getKV()
-    const data = await kv.get(KV_KEY)
-    return NextResponse.json(data ?? null)
+    const { url, key } = supabase()
+    const res = await fetch(
+      `${url}/rest/v1/${TABLE}?key=eq.${ROW_KEY}&select=value&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+    )
+    if (!res.ok) return NextResponse.json(null)
+    const rows = await res.json()
+    const data = rows?.[0]?.value ?? null
+    return NextResponse.json(data)
   } catch {
     return NextResponse.json(null)
   }
@@ -28,11 +37,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const kv = await getKV()
-    const body = await req.json()
-    await kv.set(KV_KEY, body)
+    const { url, key } = supabase()
+    const championships = await req.json()
+    const res = await fetch(`${url}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ key: ROW_KEY, value: championships }),
+    })
+    if (!res.ok) {
+      const err = await res.text()
+      return NextResponse.json({ error: err }, { status: 503 })
+    }
     return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ error: 'Storage unavailable' }, { status: 503 })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 503 })
   }
 }
