@@ -6,9 +6,8 @@ export default function ServerSync() {
   const loadFromServer = useStore((s) => s.loadFromServer)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Load from KV on first render and every 30 seconds
+  // Refresh from server every 30 seconds (initial load is handled by onRehydrateStorage)
   useEffect(() => {
-    loadFromServer()
     const interval = setInterval(loadFromServer, 30_000)
     return () => clearInterval(interval)
   }, [loadFromServer])

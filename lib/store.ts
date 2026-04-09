@@ -306,6 +306,12 @@ export const useStore = create<AppStore>()(
         championships: state.championships,
         isAdmin: state.isAdmin,
       }),
+      onRehydrateStorage: () => (state) => {
+        // After localStorage rehydration, always fetch authoritative data from server
+        if (typeof window !== 'undefined') {
+          state?.loadFromServer()
+        }
+      },
     }
   )
 )
