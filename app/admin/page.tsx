@@ -14,6 +14,7 @@ export default function AdminPage() {
   const syncToServer = useStore((s) => s.syncToServer)
   const adminSecret = useStore((s) => s.adminSecret)
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
+  const [syncError, setSyncError] = useState('')
 
   useEffect(() => {
     if (!isAdmin) router.replace('/admin/login')
@@ -31,10 +32,10 @@ export default function AdminPage() {
     try {
       await syncToServer()
       setSyncStatus('ok')
-      setTimeout(() => setSyncStatus('idle'), 3000)
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'unknown'
+      setSyncError(msg)
       setSyncStatus('error')
-      setTimeout(() => setSyncStatus('idle'), 3000)
     }
   }
 
@@ -49,29 +50,34 @@ export default function AdminPage() {
             <h1 className="text-lg font-black text-white">Administrador</h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleSync}
-            disabled={syncStatus === 'syncing'}
-            className={`rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-50 ${
-              syncStatus === 'ok' ? 'border-[#AAFF00]/40 text-[#AAFF00]' :
-              syncStatus === 'error' ? 'border-red-500/40 text-red-400' :
-              'border-[#1A1A1A] text-[#555] hover:border-[#AAFF00]/40 hover:text-[#AAFF00]'
-            }`}
-          >
-            {syncStatus === 'syncing' ? 'Sincronizando…' :
-             syncStatus === 'ok' ? '✓ Sincronizado' :
-             syncStatus === 'error' ? 'Erro — faça login novamente' :
-             'Sincronizar'}
-          </button>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-full border border-[#1A1A1A] px-4 py-1.5 text-xs text-[#555] transition-colors hover:border-red-500/40 hover:text-red-400"
-          >
-            Sair
-          </button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={syncStatus === 'syncing'}
+              className={`rounded-full border px-4 py-1.5 text-xs transition-colors disabled:opacity-50 ${
+                syncStatus === 'ok' ? 'border-[#AAFF00]/40 text-[#AAFF00]' :
+                syncStatus === 'error' ? 'border-red-500/40 text-red-400' :
+                'border-[#1A1A1A] text-[#555] hover:border-[#AAFF00]/40 hover:text-[#AAFF00]'
+              }`}
+            >
+              {syncStatus === 'syncing' ? 'Sincronizando…' :
+               syncStatus === 'ok' ? '✓ Sincronizado' :
+               syncStatus === 'error' ? 'Erro no sync' :
+               'Sincronizar'}
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-full border border-[#1A1A1A] px-4 py-1.5 text-xs text-[#555] transition-colors hover:border-red-500/40 hover:text-red-400"
+            >
+              Sair
+            </button>
+          </div>
+          {syncStatus === 'error' && syncError && (
+            <p className="text-[10px] text-red-400">{syncError}</p>
+          )}
         </div>
       </div>
 
