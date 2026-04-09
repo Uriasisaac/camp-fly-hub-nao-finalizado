@@ -126,30 +126,6 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#888]">
-              {championship.participants.length} participantes
-            </span>
-            {daysLeft > 0 ? (
-              <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#888]">
-                {daysLeft} dias restantes
-              </span>
-            ) : (
-              <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#555]">
-                Encerrado
-              </span>
-            )}
-            {championship.rankingDate && (
-              <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#888]">
-                Ranking final: {formatDate(championship.rankingDate)}
-              </span>
-            )}
-            {championship.paymentDeadline && (
-              <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#888]">
-                Pagamento até: {formatDate(championship.paymentDeadline)}
-              </span>
-            )}
-          </div>
         </div>
       </div>
 
@@ -177,6 +153,21 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
             formatValue={(v) => formatBRL(v)}
             formatMax={(v) => formatBRL(v)}
           />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-[#111] px-3 py-1 text-xs text-[#888]">
+            {championship.participants.length} participantes
+          </span>
+          {championship.rankingDate && (
+            <span className="rounded-full bg-[#111] px-3 py-1 text-xs text-[#888]">
+              Ranking final: {formatDate(championship.rankingDate)}
+            </span>
+          )}
+          {championship.paymentDeadline && (
+            <span className="rounded-full bg-[#111] px-3 py-1 text-xs text-[#888]">
+              Pagamento até: {formatDate(championship.paymentDeadline)}
+            </span>
+          )}
         </div>
       </section>
 
