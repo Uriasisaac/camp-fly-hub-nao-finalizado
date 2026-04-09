@@ -27,7 +27,7 @@ function formatBRL(n: number) {
 }
 
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
 }
 
 export default function ChampionshipPage({ params }: { params: Promise<{ id: string }> }) {
@@ -115,11 +115,6 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0">
                 <h1 className="text-xl font-black text-pretty text-white sm:text-2xl">{championship.name}</h1>
-                <p className="mt-1 text-xs text-[#555]">
-                  <span className="whitespace-nowrap">{formatDate(championship.startDate)}</span>
-                  {' → '}
-                  <span className="whitespace-nowrap">{formatDate(championship.endDate)}</span>
-                </p>
               </div>
               <div className="sm:flex-none sm:text-right">
                 <p className="text-xs text-[#555]">Premiação total</p>
