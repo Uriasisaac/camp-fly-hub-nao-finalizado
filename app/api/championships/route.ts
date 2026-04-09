@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const KV_KEY = 'fly-hub-championships'
+const TOKEN = process.env.ADMIN_SECRET || 'dev-token'
 
 async function getKV() {
   const { kv } = await import('@vercel/kv')
@@ -18,12 +19,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.ADMIN_SECRET
-  if (secret) {
-    const auth = req.headers.get('authorization')
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const session = req.cookies.get('admin-session')?.value
+  if (session !== TOKEN) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {

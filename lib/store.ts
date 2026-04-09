@@ -7,8 +7,7 @@ import { MOCK_CHAMPIONSHIPS } from './mock-data'
 interface AppStore {
   championships: Championship[]
   isAdmin: boolean
-  adminSecret: string | null
-  login: (secret: string) => void
+  login: () => void
   logout: () => void
   resetToDefaults: () => void
   loadFromServer: () => Promise<void>
@@ -52,10 +51,9 @@ export const useStore = create<AppStore>()(
     (set, get) => ({
       championships: MOCK_CHAMPIONSHIPS,
       isAdmin: false,
-      adminSecret: null,
 
-      login: (secret) => set({ isAdmin: true, adminSecret: secret }),
-      logout: () => set({ isAdmin: false, adminSecret: null }),
+      login: () => set({ isAdmin: true }),
+      logout: () => set({ isAdmin: false }),
       resetToDefaults: () => set({ championships: MOCK_CHAMPIONSHIPS }),
 
       loadFromServer: async () => {
@@ -72,14 +70,10 @@ export const useStore = create<AppStore>()(
       },
 
       syncToServer: async () => {
-        const { championships, adminSecret } = get()
-        if (!adminSecret) throw new Error('no-secret')
+        const { championships } = get()
         const res = await fetch('/api/championships', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminSecret}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(championships),
         })
         if (!res.ok) throw new Error(`http-${res.status}`)
@@ -311,7 +305,6 @@ export const useStore = create<AppStore>()(
       partialize: (state) => ({
         championships: state.championships,
         isAdmin: state.isAdmin,
-        adminSecret: state.adminSecret,
       }),
     }
   )

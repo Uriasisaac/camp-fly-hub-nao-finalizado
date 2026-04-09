@@ -14,7 +14,7 @@ export default function ServerSync() {
   // Auto-sync to KV whenever championships change (admin only, debounced)
   useEffect(() => {
     const unsub = useStore.subscribe((state, prevState) => {
-      if (state.championships !== prevState.championships && state.adminSecret) {
+      if (state.championships !== prevState.championships && state.isAdmin) {
         clearTimeout(timerRef.current)
         timerRef.current = setTimeout(() => {
           useStore.getState().syncToServer()

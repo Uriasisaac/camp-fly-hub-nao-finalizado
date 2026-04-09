@@ -12,7 +12,6 @@ export default function AdminPage() {
   const logout = useStore((s) => s.logout)
   const championships = useStore((s) => s.championships)
   const syncToServer = useStore((s) => s.syncToServer)
-  const adminSecret = useStore((s) => s.adminSecret)
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
   const [syncError, setSyncError] = useState('')
 

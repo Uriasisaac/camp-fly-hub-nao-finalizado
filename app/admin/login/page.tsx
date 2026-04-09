@@ -27,8 +27,7 @@ export default function AdminLoginPage() {
       })
       const { ok } = await res.json()
       if (ok) {
-        login(password)
-        // Sync local data to KV — don't block login on sync failure
+        login()
         useStore.getState().syncToServer().catch(() => {})
         router.push('/admin')
       } else {
