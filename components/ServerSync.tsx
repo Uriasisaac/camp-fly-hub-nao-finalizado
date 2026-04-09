@@ -6,9 +6,11 @@ export default function ServerSync() {
   const loadFromServer = useStore((s) => s.loadFromServer)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Load authoritative data from KV on first render
+  // Load from KV on first render and every 30 seconds
   useEffect(() => {
     loadFromServer()
+    const interval = setInterval(loadFromServer, 30_000)
+    return () => clearInterval(interval)
   }, [loadFromServer])
 
   // Auto-sync to KV whenever championships change (admin only, debounced)

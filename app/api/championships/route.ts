@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 const KV_KEY = 'fly-hub-championships'
 
 async function getKV() {
