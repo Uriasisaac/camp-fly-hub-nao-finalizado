@@ -91,6 +91,7 @@ export const useStore = create<AppStore>()(
         }))
         const res = await fetch('/api/championships', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
