@@ -83,17 +83,11 @@ export const useStore = create<AppStore>()(
 
       syncToServer: async () => {
         const { championships } = get()
-        // Strip base64 images before sending — they exceed Vercel's 4.5MB limit.
-        // coverInternal is device-local only; other devices use the cover URL.
-        const payload = championships.map((c) => ({
-          ...c,
-          coverInternal: c.coverInternal?.startsWith('data:') ? undefined : c.coverInternal,
-        }))
         const res = await fetch('/api/championships', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(championships),
         })
         if (!res.ok) {
           let detail = `http-${res.status}`
