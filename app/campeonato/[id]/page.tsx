@@ -112,16 +112,16 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
         {/* Info */}
         <div className="bg-[#0D0D0D] p-5 sm:p-6">
           <div>
-            <div className="flex items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-black text-white sm:text-2xl">{championship.name}</h1>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <div className="min-w-0">
+                <h1 className="text-xl font-black text-pretty text-white sm:text-2xl">{championship.name}</h1>
                 <p className="mt-1 text-xs text-[#555]">
                   <span className="whitespace-nowrap">{formatDate(championship.startDate)}</span>
                   {' → '}
                   <span className="whitespace-nowrap">{formatDate(championship.endDate)}</span>
                 </p>
               </div>
-              <div className="flex-none text-right">
+              <div className="sm:flex-none sm:text-right">
                 <p className="text-xs text-[#555]">Premiação total</p>
                 <p className="text-xl font-black text-[#AAFF00]">{formatBRL(grandTotal)}</p>
               </div>
