@@ -4,6 +4,15 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { Championship, RankingEntry, Participant, Video, VideoReview } from './types'
 import { MOCK_CHAMPIONSHIPS } from './mock-data'
 
+// Module-level timestamp: updated whenever a local mutation happens.
+// loadFromServer checks this before AND after the fetch — if it changed
+// during the fetch (meaning the user mutated data), the server response
+// is discarded so we never overwrite pending local changes.
+let _lastLocalMutation = 0
+export function markLocalMutation() {
+  _lastLocalMutation = Date.now()
+}
+
 interface AppStore {
   championships: Championship[]
   isAdmin: boolean
@@ -57,11 +66,14 @@ export const useStore = create<AppStore>()(
       resetToDefaults: () => set({ championships: MOCK_CHAMPIONSHIPS }),
 
       loadFromServer: async () => {
+        // Snapshot the mutation clock before the fetch.
+        // If it changes during the fetch, a local mutation happened → discard.
+        const snapshotMutation = _lastLocalMutation
         try {
           const res = await fetch('/api/championships')
           if (!res.ok) return
           const data = await res.json()
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && _lastLocalMutation === snapshotMutation) {
             set({ championships: data })
           }
         } catch {
@@ -71,10 +83,16 @@ export const useStore = create<AppStore>()(
 
       syncToServer: async () => {
         const { championships } = get()
+        // Strip base64 images before sending — they exceed Vercel's 4.5MB limit.
+        // coverInternal is device-local only; other devices use the cover URL.
+        const payload = championships.map((c) => ({
+          ...c,
+          coverInternal: c.coverInternal?.startsWith('data:') ? undefined : c.coverInternal,
+        }))
         const res = await fetch('/api/championships', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(championships),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error(`http-${res.status}`)
       },

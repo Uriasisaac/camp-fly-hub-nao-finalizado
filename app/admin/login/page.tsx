@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import Image from 'next/image'
@@ -9,7 +9,6 @@ export default function AdminLoginPage() {
   const login = useStore((s) => s.login)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const userRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -28,10 +27,9 @@ export default function AdminLoginPage() {
       const { ok } = await res.json()
       if (ok) {
         login()
-        useStore.getState().syncToServer().catch(() => {})
         router.push('/admin')
       } else {
-        setError('Usuário ou senha inválidos.')
+        setError('Senha incorreta.')
         setLoading(false)
       }
     } catch {
@@ -43,7 +41,6 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <Image src="/logo.png" alt="" width={48} height={48} className="object-contain" />
           <div className="text-center">
@@ -57,23 +54,6 @@ export default function AdminLoginPage() {
           className="rounded-2xl border border-[#1A1A1A] bg-[#0D0D0D] p-6"
           noValidate
         >
-          <div className="mb-4">
-            <label htmlFor="username" className="mb-1.5 block text-xs font-medium text-[#888]">
-              Usuário
-            </label>
-            <input
-              id="username"
-              ref={userRef}
-              type="text"
-              name="username"
-              autoComplete="username"
-              spellCheck={false}
-              required
-              placeholder="seu usuário…"
-              className="w-full rounded-lg border border-[#1A1A1A] bg-[#111] px-4 py-3 text-sm text-white placeholder-[#333] transition-colors focus-visible:border-[#AAFF00] focus-visible:outline-none"
-            />
-          </div>
-
           <div className="mb-6">
             <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-[#888]">
               Senha
