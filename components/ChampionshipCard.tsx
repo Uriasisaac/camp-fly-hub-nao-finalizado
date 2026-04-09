@@ -135,10 +135,7 @@ export default function ChampionshipCard({ championship }: ChampionshipCardProps
 
       {/* Info */}
       <div className="bg-[#0D0D0D] p-3">
-        <h3
-          className="text-sm font-bold leading-tight text-white"
-          style={{ textWrap: 'balance' } as React.CSSProperties}
-        >
+        <h3 className="line-clamp-2 h-[2.5em] text-sm font-bold leading-tight text-white">
           {championship.name}
         </h3>
         <p className="mt-1 text-xs font-bold text-[#AAFF00]">{totalPrize}</p>

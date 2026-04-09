@@ -116,7 +116,9 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
               <div className="min-w-0 flex-1">
                 <h1 className="text-xl font-black text-white sm:text-2xl">{championship.name}</h1>
                 <p className="mt-1 text-xs text-[#555]">
-                  {formatDate(championship.startDate)} → {formatDate(championship.endDate)}
+                  <span className="whitespace-nowrap">{formatDate(championship.startDate)}</span>
+                  {' → '}
+                  <span className="whitespace-nowrap">{formatDate(championship.endDate)}</span>
                 </p>
               </div>
               <div className="flex-none text-right">
@@ -134,7 +136,7 @@ export default function ChampionshipPage({ params }: { params: Promise<{ id: str
               {championship.participants.length} participantes
             </span>
             {daysLeft > 0 ? (
-              <span className="rounded-full bg-[#AAFF00]/10 px-3 py-1 text-xs font-bold text-[#AAFF00]">
+              <span className="rounded-full bg-[#1A1A1A] px-3 py-1 text-xs text-[#888]">
                 {daysLeft} dias restantes
               </span>
             ) : (

@@ -28,23 +28,23 @@ export default function GerenciarListPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#AAFF00]/25 bg-[#AAFF00]/10 px-3 py-1.5 text-xs font-bold text-[#AAFF00] transition-all hover:bg-[#AAFF00] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#AAFF00]"
-          >
-            Voltar
-          </button>
-          <h1 className="text-xl font-black text-white">Gerenciar Campeonatos</h1>
-        </div>
-        <Link
-          href="/admin/criar"
-          className="rounded-full bg-[#AAFF00] px-4 py-2 text-xs font-bold text-black transition-opacity hover:opacity-80"
+      <div className="mb-8">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-[#AAFF00]/25 bg-[#AAFF00]/10 px-3 py-1.5 text-xs font-bold text-[#AAFF00] transition-all hover:bg-[#AAFF00] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#AAFF00]"
         >
-          + Novo
-        </Link>
+          Voltar
+        </button>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-black text-pretty text-white">Gerenciar Campeonatos</h1>
+          <Link
+            href="/admin/criar"
+            className="flex-none rounded-full bg-[#AAFF00] px-4 py-2 text-xs font-bold text-black transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#AAFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            + Novo
+          </Link>
+        </div>
       </div>
 
       {championships.length === 0 ? (
@@ -70,7 +70,7 @@ export default function GerenciarListPage() {
               <li key={c.id}>
                 <Link
                   href={`/admin/gerenciar/${c.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-xl border border-[#1A1A1A] bg-[#0D0D0D] p-4 transition-all hover:border-[#AAFF00]/30 hover:bg-[#111]"
+                  className="group flex items-center justify-between gap-4 rounded-xl border border-[#1A1A1A] bg-[#0D0D0D] p-4 transition-all hover:border-[#AAFF00]/30 hover:bg-[#111] [touch-action:manipulation]"
                   aria-label={`Gerenciar ${c.name}`}
                 >
                   <div className="flex min-w-0 items-center gap-4">
@@ -81,7 +81,7 @@ export default function GerenciarListPage() {
                     >
                       {c.cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={c.cover} alt="" className="h-full w-full object-cover" />
+                        <img src={c.cover} alt="" width={44} height={57} loading="lazy" className="h-full w-full object-cover" />
                       ) : (
                         <div
                           className="h-full w-full"
